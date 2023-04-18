@@ -13,7 +13,7 @@ chrome_options = Options()
 chrome_options.headless = True     # use background mode
 driver = webdriver.Chrome("chromedriver.exe", chrome_options=chrome_options)
 
-with open("organisations.csv", encoding='UTF8') as f:
+with open("Parsers/organisations.csv", encoding='UTF8') as f:
     organisations = [row.replace("\n","") for row in f]
     organisations.pop(0)
 

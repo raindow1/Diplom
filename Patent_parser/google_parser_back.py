@@ -20,7 +20,7 @@ driver = webdriver.Chrome("chromedriver.exe", chrome_options=chrome_options)
 
 Id = 1
 
-with open("organisations.csv", encoding='UTF8') as f:
+with open("Parsers/organisations.csv", encoding='UTF8') as f:
     organisations = [row.replace("\n","") for row in f]
     organisations.pop(0)
 
@@ -80,6 +80,11 @@ for organisation in organisations:
             contributor_string += contributor_text + "\n"
         #print(contributor_text)
 
+        #MPK
+        mpk_string = ""
+        for ipc in soup.find_all('div', {'class': 'classification-tree', 'hidden': False})[3::4]:
+            mpk = ipc.find_all('a', {'id': 'link'})[-1].text
+            mpk_string += mpk + "\n"
 
         #Description
         description_string = ""
@@ -113,9 +118,9 @@ for organisation in organisations:
             docs_string += similar_link + "\n"
         #print(docs_string)
 
-        row = [Id, title_text, abstract_text, index_text, date_text, contributor_string, description_string, claim_string, docs_string]
+        row = [Id, title_text, abstract_text, index_text, mpk_string, date_text, contributor_string, description_string, claim_string, docs_string]
         data = [row]
-        client.insert('google_patents', data, column_names=['Id','Title', 'Abstract', 'Index','Date_of_publication','Contributor', 'Description', 'Claims','Similar_docs'], database = "db_patents")
+        client.insert('google_patents', data, column_names=['Id','Title', 'Abstract', 'Index', 'IPC', 'Date_of_publication','Contributor', 'Description', 'Claims','Similar_docs'], database = "db_patents")
         Id += 1
 
 

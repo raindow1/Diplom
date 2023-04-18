@@ -24,6 +24,6 @@ print(organisations)
 # print(organisations)
 
 # open the file in the write mode
-with open('organisations.csv', 'w', encoding='UTF8') as f:
+with open('Parsers/organisations.csv', 'w', encoding='UTF8') as f:
     writer = csv.writer(f,delimiter = "\n")
     writer.writerow(organisations)
