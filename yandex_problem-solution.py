@@ -5,125 +5,57 @@ from yargy.predicates import gram
 from yargy.relations import gnc_relation
 from yargy.pipelines import morph_pipeline, caseless_pipeline
 from razdel import sentenize
-
-Id = 1
-
-Problem = fact(
-    'Problem',
-    ['target', 'add_word', 'second_word']
-)
-
-TARGET = morph_pipeline([
-    "цель",
-    "способ",
-    "изобретение",
-    "задача",
-    "модель",
-    "использование",
-    ])
-
-ADD_WORD = morph_pipeline([
-    "предлагаемого",
-    "предлагаемого технического",
-    "преполагаемого",
-    "настоящего",
-    "данного",
-    "полезной",
-    "заявляемого",
-    "решаемая"
-    ])
-
-SECOND_WORD = morph_pipeline([
-    "изобретения",
-    "предназначено",
-    "решения",
-    ])
-
-SECOND_WORD1 = morph_pipeline([
-    "позволяет",
-    "решает",
-    "направлено",
-    "модели",
-    "способа",
-    "результат",
-    "технический результат"
-    ])
+from dicts_and_rules import ORGANIZATION, ORGANIZATION1
 
 
-KEY_WORDS = morph_pipeline([
-    'целью изобретения',
-    'цель изобретения',
-    'изобретение предназаначено',
-    "способ предназначен",
-    "способ позволяет",
-    "целью решения",
-    "целью предлагаемого решения",
-    "задачей способа",
-    "задачей изобретения",
-    "задача изобретения",
-    "задача достигается",
-    "задачей предлагаемого изобретения",
-    "задачей настоящего изобретения",
-    "задачей данного изобретения",
-    "задачей решения",
-    "задачей предлагаемого решения",
-    "изобретение позволяет",
-    "модель позволяет",
-    "изобретение решает",
-    "целью способа",
-    "решаемая изобретением",
-    "результатом изобретения",
-    "техническая задача"
-])
+def main():
 
-ORGANIZATION = rule(TARGET.interpretation(Problem.target),
-                    ADD_WORD.interpretation(Problem.add_word).optional(),
-                    SECOND_WORD.interpretation(Problem.second_word))
+    Id = 1
 
-ORGANIZATION1 = rule(TARGET.interpretation(Problem.target),
-                    ADD_WORD.interpretation(Problem.add_word).optional(),
-                    SECOND_WORD1.interpretation(Problem.second_word))
 
-orgparser = Parser(ORGANIZATION)
-orgparser1 = Parser(ORGANIZATION1)
+    orgparser_main = Parser(ORGANIZATION)
+    orgparser_add = Parser(ORGANIZATION1)
 
-problems = []
+    problems = []
 
-patent_count = client.query('SELECT count() FROM db_patents.yandex_patents').result_rows[0][0]
+    patent_count = client.query('SELECT count() FROM db_patents.yandex_patents').result_rows[0][0]
 
-for i in range(1, patent_count):
-    result = client.query(f'SELECT Description, Abstract FROM db_patents.yandex_patents WHERE Id = {i}')
-    solution = client.query(f'SELECT Title FROM db_patents.yandex_patents WHERE Id = {i}').result_rows[0][0]
-    description = result.result_rows[0][0]
-    abstract = result.result_rows[0][1]
+    for i in range(1, patent_count):
+        result = client.query(f'SELECT Description, Abstract FROM db_patents.yandex_patents WHERE Id = {i}')
+        solution = client.query(f'SELECT Title FROM db_patents.yandex_patents WHERE Id = {i}').result_rows[0][0]
+        description = result.result_rows[0][0]
+        abstract = result.result_rows[0][1]
 
-    description_sentences = list(sentenize(description))
-    abstract_sentences = list(sentenize(abstract))
+        description_sentences = list(sentenize(description))
+        abstract_sentences = list(sentenize(abstract))
 
-    for desc_sentence in description_sentences:
-        matches = list(orgparser.findall(desc_sentence.text))
-        if matches and not problems:
-            problems.append(desc_sentence.text)
-        else:
-            matches = list(orgparser1.findall(desc_sentence.text))
+        for desc_sentence in description_sentences:
+            matches = list(orgparser_main.findall(desc_sentence.text))
             if matches and not problems:
                 problems.append(desc_sentence.text)
+            else:
+                matches = list(orgparser_add.findall(desc_sentence.text))
+                if matches and not problems:
+                    problems.append(desc_sentence.text)
 
 
-    for abstr_sentence in abstract_sentences:
-        matches = list(orgparser.findall(abstr_sentence.text))
-        if matches and not problems:
-            problems.append(abstr_sentence.text)
-        else:
-            matches = list(orgparser1.findall(abstr_sentence.text))
+        for abstr_sentence in abstract_sentences:
+            matches = list(orgparser_main.findall(abstr_sentence.text))
             if matches and not problems:
                 problems.append(abstr_sentence.text)
+            else:
+                matches = list(orgparser_add.findall(abstr_sentence.text))
+                if matches and not problems:
+                    problems.append(abstr_sentence.text)
 
 
-    row = [Id, problems, solution, i]
-    data = [row]
-    client.insert('yandex_problem_solution', data,
-                  column_names=['Id', 'Problem', 'Solution', 'Patent_id'], database="db_patents")
-    Id += 1
-    problems.clear()
+        row = [Id, problems, solution, i]
+        data = [row]
+        client.insert('yandex_problem_solution', data,
+                      column_names=['Id', 'Problem', 'Solution', 'Patent_id'], database="db_patents")
+        Id += 1
+        problems.clear()
 
+
+if __name__ == "__main__":
+    main()

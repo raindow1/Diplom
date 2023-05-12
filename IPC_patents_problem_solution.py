@@ -1,3 +1,4 @@
+import time
 from database import client
 from yargy import Parser, rule, and_, not_
 from razdel import sentenize
@@ -6,18 +7,18 @@ from dicts_and_rules import ORGANIZATION, ORGANIZATION1
 
 def main():
 
-    Id = 1
+    Id = 1285
 
     orgparser_main = Parser(ORGANIZATION)
     orgparser_add = Parser(ORGANIZATION1)
 
     problems = []
 
-    patent_count = client.query('SELECT count() FROM db_patents.google_patents').result_rows[0][0]
+    patent_count = client.query('SELECT count() FROM db_patents.translated_IPC_patents').result_rows[0][0]
 
-    for i in range(1, patent_count):
-        result = client.query(f'SELECT Description, Abstract FROM db_patents.google_patents WHERE Id = {i}')
-        solution = client.query(f'SELECT Title FROM db_patents.google_patents WHERE Id = {i}').result_rows[0][0]
+    for i in range(1285, patent_count):
+        result = client.query(f'SELECT Description, Abstract FROM db_patents.translated_IPC_patents WHERE Id = {i}')
+        solution = client.query(f'SELECT Solution FROM db_patents.translated_IPC_patents WHERE Id = {i}').result_rows[0][0]
         description = result.result_rows[0][0]
         abstract = result.result_rows[0][1]
 
@@ -46,10 +47,11 @@ def main():
 
         row = [Id, problems, solution, i]
         data = [row]
-        client.insert('google_problem_solution', data,
+        client.insert('IPC_problem_solution', data,
                       column_names=['Id', 'Problem', 'Solution', 'Patent_id'], database="db_patents")
         Id += 1
         problems.clear()
+
 
 if __name__ == "__main__":
     main()
