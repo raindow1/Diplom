@@ -27,14 +27,16 @@ with open("Parsers/organisations.csv", encoding='UTF8') as f:
 
 
 for organisation in organisations:
-    main_patent_info_url = f'https://patents.google.com/xhr/query?url=assignee%3D{organisation}' \
-                           f'%26language%3DRUSSIAN&exp=&download=true'
-    content = requests.get(main_patent_info_url).content
-    print(content)
-    links = pd.read_csv(BytesIO(content[content.find(b'\n') + 1:]))['result link'].tolist()
+    url = f"https://patents.google.com/?assignee={organisation}&language=RUSSIAN&num=100"
+    driver.get(url)
+    time.sleep(5)
+    page = driver.page_source
+    org = BeautifulSoup(page, 'html.parser')
 
-    for link in links:
-        parse_link = link
+    root = org.find_all("state-modifier", {"class": "result-title style-scope search-result-item"})
+    for each_tag in root:
+        link = each_tag["data-result"]
+        parse_link = 'https://patents.google.com/' + link
         driver.get(parse_link)
         time.sleep(15)
         link_page = driver.page_source
@@ -53,6 +55,15 @@ for organisation in organisations:
         title_text = title["content"]
         print(title_text)
 
+
+        #Asignee
+        asignee = soup.select_one('[data-assignee]')['data-assignee']
+        print(asignee)
+
+        #Authors
+        for data_inventor in soup.select('[data-inventor]'):
+            authors = data_inventor['data-inventor']
+            print(authors)
 
         #Index
         index = soup.find('h2', attrs={'id':'pubnum'})

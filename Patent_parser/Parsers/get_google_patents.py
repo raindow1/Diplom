@@ -32,13 +32,45 @@ def main():
         for each_tag in root:
             link = each_tag["data-result"]
             parse_link = 'https://patents.google.com/' + link
-            link_page = google_driver.get_patent_html(parse_link)
-            soup = BeautifulSoup(link_page, 'html.parser')
 
-        patent = Patent(link_page, google_parser)
-        title = patent.get_claims()
-        print(title)
 
+            patent = Patent(parse_link, google_parser)
+
+            #Abstract
+            abstract = patent.get_abstract()
+
+            #Title
+            title = patent.get_title()
+
+            #Date of publication
+            date_of_publication = patent.get_date_of_publication()
+
+            #Asignee
+            asignee = patent.get_assignee()
+
+            #Authors
+            authors = patent.get_authors()
+
+            #Description
+            description = patent.get_description()
+
+            #IPC
+            ipc = patent.get_ipc()
+
+            #Claims
+            claims = patent.get_claims()
+
+            #Similar_docs
+            sim_docs = patent.get_similar_patents()
+
+            row = [Id, title, abstract, asignee, authors, ipc, date_of_publication,
+                   description, claims, sim_docs]
+            data = [row]
+            client.insert('IPC_google_patents', data,
+                          column_names=['Id', 'Title', 'Abstract', 'Index', 'Asignee', 'Authors', 'IPC',
+                                        'Date_of_publication', 'Description', 'Claims', 'Similar_docs'],
+                          database="db_patents")
+            Id += 1
 
 
 if __name__ == '__main__':

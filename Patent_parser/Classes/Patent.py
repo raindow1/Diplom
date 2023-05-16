@@ -8,20 +8,20 @@ class Patent:
         self.link = self.__link
 
     @property
-    def patent_link(self) -> str:
+    def link(self) -> str:
         return self.__link
 
-    @patent_link.setter
-    def patent_link(self, link: str) -> None:
+    @link.setter
+    def link(self, link: str) -> None:
         self.__link = link
         self.__parser.get_patent_link(link)
 
     @property
-    def pat_parser(self) -> Parser:
+    def parser(self) -> Parser:
         return self.__parser
 
-    @pat_parser.setter
-    def patent_parser(self, parser: Parser) -> None:
+    @parser.setter
+    def parser(self, parser: Parser) -> None:
         self.__parser = parser
         self.__parser.get_patent_link(self.__link)
 
