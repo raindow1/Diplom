@@ -8,7 +8,7 @@ def read_files():
     tmp = dict()
     word_list = []
     deletion_mas = []
-    with open('dataset.csv', 'r') as csv_file:
+    with open('Problem_solution/dataset.csv', 'r') as csv_file:
         reader = csv.reader(csv_file)
         for row in reader:
             tmp_list = row[1].split(";")
@@ -72,11 +72,11 @@ def main():
     count = 0
 
     nlp = stanza.Pipeline(lang='ru', processors='tokenize,pos,lemma,ner,depparse')
-    VO_patent_count = client.query('SELECT count() FROM db_patents.yandex_problem_solution').result_rows[0][0]
+    VO_patent_count = client.query('SELECT count() FROM db_patents.IPC_problem_solution').result_rows[0][0]
     IPC_patent_count = client.query('SELECT count() FROM db_patents.IPC_problem_solution').result_rows[0][0]
 
     for i in range(1, VO_patent_count):
-        VO_result = client.query(f'SELECT Problem FROM db_patents.yandex_problem_solution WHERE Id = {i}')
+        VO_result = client.query(f'SELECT Problem FROM db_patents.IPC_problem_solution WHERE Id = {i}')
         VO_problem = VO_result.result_rows[0][0]
 
         if VO_problem:
@@ -98,42 +98,5 @@ def main():
 
 
 
-        for c in range(1, IPC_patent_count):
-            IPC_result = client.query(f'SELECT Problem FROM db_patents.IPC_problem_solution WHERE Id = {i}')
-            IPC_asignee = client.query(f'SELECT Asignee FROM db_patents.IPC_google_patents WHERE Id = {i}').result_rows[0][0]
-            IPC_problem = IPC_result.result_rows[0][0]
-            if IPC_problem:
-                IPC_tmp = dict()
-                IPC_res = dict()
-                for word in list:
-                    if word in IPC_problem[0]:
-                        IPC_index = IPC_problem[0].find(word)
-                        IPC_splitted_string = IPC_problem[0][IPC_index:]
-                        IPC_anl_string = IPC_splitted_string.split(',')[0]
-                        print(IPC_anl_string)
-
-                        IPC_doc = nlp(IPC_anl_string)
-                        for sent in IPC_doc.sentences:
-                            for a in sent.words:
-                                IPC_tmp[a.text] = {"deprel": a.deprel, "lemma": a.lemma}
-                        for k in IPC_tmp.keys():
-                            if IPC_tmp[k]["deprel"] in ["root", "nmod"]:
-                                IPC_res[k] = {"lemma": IPC_tmp[k]["lemma"]}
-
-                for l in IPC_res.keys():
-                    if IPC_tmp[l]["lemma"] in VO_res:
-                        count += 1
-
-                if count > 3:
-                    sim_probs = ['fff', 'ddd']
-                    row = [Id, IPC_asignee, IPC_problem[0], sim_probs]
-                    data = [row]
-                    client.insert('Potential_partners', data,
-                                  column_names=['Id', 'Organisation_name', 'Problems', 'Similar_problems'], database="db_patents")
-                    Id += 1
-            #print(f'analyzed patent #{c}')
-
-
 if __name__ == "__main__":
     main()
-
