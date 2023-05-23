@@ -2,7 +2,7 @@ from database import client
 from deep_translator import GoogleTranslator
 from razdel import sentenize
 import time
-
+from Translation.PatentTranslator import PatentTranslator
 
 def create_chunks(corpus, max_chunk_size):
     chunks = [corpus[i:i + max_chunk_size] for i in range(0, len(corpus), max_chunk_size)]
@@ -36,23 +36,26 @@ def translate_text(Id):
 
 
     max_chunk_size = 4000
-
+    trans = PatentTranslator()
     index = client.query(f'SELECT Index FROM db_patents.IPC_google_patents WHERE Id = {Id}').result_rows[0][0]
     result = client.query(f'SELECT Description, Abstract FROM db_patents.IPC_google_patents WHERE Id = {Id}')
     solution = client.query(f'SELECT Title FROM db_patents.IPC_google_patents WHERE Id = {Id}').result_rows[0][0]
     description = result.result_rows[0][0]
     abstract = result.result_rows[0][1]
     if 'RU' not in index:
-        translated_solution = translate(solution, max_chunk_size)
+        translated_solution = trans.translate_text(solution, max_chunk_size)
         #print(translated_solution)
-        #translated_description = translate(description, max_chunk_size)
+        translated_description = translate(description, max_chunk_size)
         #print(translated_description)
         #translated_abstract = translate(abstract, max_chunk_size)
         #print(translated_abstract)
 
-    return translated_solution
+
+    return translated_description
+
 def main():
-    translate_text(4)
+    print(translate_text(4))
+
 
 if __name__ == "__main__":
     main()
