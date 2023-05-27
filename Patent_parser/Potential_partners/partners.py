@@ -111,8 +111,6 @@ def main():
                         if VO_tmp[k]["deprel"] in ["root"]:
                             VO_res_root[k] = {"lemma": VO_tmp[k]["lemma"], "id": VO_tmp[k]["id"]}
                             VO_root_id = VO_res_root[k]["id"]
-                            # huperonimes = wn.get_senses('способность')[0].synset.hypernyms
-                            # print(huperonimes[0].title)
                         if VO_tmp[k]["deprel"] in ["nmod"] and VO_tmp[k]["head"] == VO_root_id:
                             VO_res_nmod[k] = {"lemma": VO_tmp[k]["lemma"]}
                             VO_second_nmod_id = VO_tmp[k]["id"]
@@ -203,20 +201,20 @@ def main():
                     if third_nmod_key in IPC_third_hyponyms:
                         count += 1
 
-                if count >= 3:
-                    sim_probs = ['fff', 'ddd']
-                    row = [Id, IPC_asignee, IPC_problem[0], sim_probs]
-                    data = [row]
-                    client.insert('Potential_partners', data,
-                                  column_names=['Id', 'Organisation_name', 'Problems', 'Similar_problems'],
-                                  database="db_patents")
-                    Id += 1
+                # if count >= 3:
+                #     sim_probs = ['fff', 'ddd']
+                #     row = [Id, IPC_asignee, IPC_problem[0], sim_probs]
+                #     data = [row]
+                #     client.insert('Potential_partners', data,
+                #                   column_names=['Id', 'Organisation_name', 'Problems', 'Similar_problems'],
+                #                   database="db_patents")
+                #     Id += 1
 
-                    # print(IPC_res_root)
+                    print(IPC_res_root)
                     # print(IPC_res_nmod)
                     # print(IPC_third_nmod)
-                    # print(IPC_nmod_hyponyms)
-                    # print(IPC_third_hyponyms)
+                    print(IPC_nmod_hyponyms)
+                    print(IPC_third_hyponyms)
                     IPC_res_root.clear()
                     IPC_res_nmod.clear()
                     IPC_third_nmod.clear()
