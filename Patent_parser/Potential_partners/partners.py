@@ -1,5 +1,5 @@
 import stanza
-from database import client
+from Database.database import client
 import csv
 from ruwordnet import RuWordNet
 

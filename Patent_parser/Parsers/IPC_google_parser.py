@@ -1,12 +1,8 @@
-import requests
 import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
-from database import client
-from io import BytesIO
-from typing import List
+from Database.database import client
 import pandas as pd
 
 

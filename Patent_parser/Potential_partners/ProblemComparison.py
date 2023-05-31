@@ -1,5 +1,4 @@
-from database import client
-from typing import List, Dict, Union
+from typing import List
 import csv
 from Potential_partners.Problems import Problems
 

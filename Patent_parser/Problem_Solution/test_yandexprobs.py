@@ -1,10 +1,11 @@
-from database import client
+from Database.ClickhouseDB import ClickhouseDB
 from Problem_Solution.YandexProblemSolution import YandexProblemSolution
 
 
 def main():
 
-    patent_count = client.query('SELECT count() FROM db_patents.yandex_patents').result_rows[0][0]
+    db_client = ClickhouseDB()
+    patent_count = db_client.count_data(db_client.database, db_client.db_yandex_patents)
 
     for i in range(1, patent_count):
         yandex_probs = YandexProblemSolution()

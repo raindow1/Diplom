@@ -1,6 +1,5 @@
-from database import client
+from Database.ClickhouseDB import ClickhouseDB
 from deep_translator import GoogleTranslator
-from razdel import sentenize
 import time
 from Translation.PatentTranslator import PatentTranslator
 
@@ -10,13 +9,11 @@ def create_chunks(corpus, max_chunk_size):
 
 
 def translate(field, max_chunk_size):
-    #translator = Translator(to_lang='ru', from_lang='en')
     if len(field) > max_chunk_size:
         results_list = []
         concatenated_result = ""
 
         original_chunks = create_chunks(field, max_chunk_size)
-        #original_chunks = list(sentenize(field))
         for i in original_chunks:
             r = GoogleTranslator(source='en', target='ru').translate(text=i)
             time.sleep(10)
@@ -37,9 +34,10 @@ def translate_text(Id):
 
     max_chunk_size = 4000
     trans = PatentTranslator()
-    index = client.query(f'SELECT Index FROM db_patents.IPC_google_patents WHERE Id = {Id}').result_rows[0][0]
-    result = client.query(f'SELECT Description, Abstract FROM db_patents.IPC_google_patents WHERE Id = {Id}')
-    solution = client.query(f'SELECT Title FROM db_patents.IPC_google_patents WHERE Id = {Id}').result_rows[0][0]
+    db_client = ClickhouseDB()
+    index = db_client.select_from_db(db_client.database, db_client.db_ipc_patents, ["Index"], Id).result_rows[0][0]
+    result = db_client.select_from_db(db_client.database, db_client.db_ipc_patents, ["Description", "Abstract"], Id)
+    solution = db_client.select_from_db(db_client.database, db_client.db_ipc_patents, ["Title"], Id).result_rows[0][0]
     description = result.result_rows[0][0]
     abstract = result.result_rows[0][1]
     if 'RU' not in index:

@@ -1,6 +1,6 @@
 from Problem_Solution.ProblemSolution import ProblemSolution
-from database import client
-from typing import List, Dict, Union
+from Database.database import client
+from typing import List
 from razdel import sentenize
 
 

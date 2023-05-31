@@ -1,11 +1,7 @@
-import requests
-import time
 from bs4 import BeautifulSoup
-from database import client
+from Database.database import client
 from Methods.google_parser_struct import GoogleParser
-from Methods.yandex_parser_struct import YandexParser
 from Methods.google_webdriver import GoogleWebDriver
-from Methods.yandex_webdriver import YandexWebDriver
 from Classes.Patent import Patent
 import os
 

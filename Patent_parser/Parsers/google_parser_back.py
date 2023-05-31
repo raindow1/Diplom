@@ -1,13 +1,8 @@
-import requests
-import re
-import csv
-import json
 import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
-from database import client
+from Database.database import client
 
 
 

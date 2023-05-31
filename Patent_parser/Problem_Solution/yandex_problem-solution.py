@@ -1,9 +1,5 @@
-from database import client
-from yargy import Parser, rule, and_, not_
-from yargy.interpretation import fact
-from yargy.predicates import gram
-from yargy.relations import gnc_relation
-from yargy.pipelines import morph_pipeline, caseless_pipeline
+from Database.database import client
+from yargy import Parser
 from razdel import sentenize
 from dicts_and_rules import ORGANIZATION, ORGANIZATION1
 

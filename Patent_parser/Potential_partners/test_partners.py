@@ -1,4 +1,4 @@
-from database import client
+from Database.database import client
 from Potential_partners.ProblemComparison import ProblemComparison
 
 

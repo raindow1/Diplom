@@ -1,6 +1,5 @@
-from database import client
+from Database.database import client
 from deep_translator import GoogleTranslator
-from razdel import sentenize
 import time
 
 

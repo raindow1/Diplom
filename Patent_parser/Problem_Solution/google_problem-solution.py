@@ -1,5 +1,5 @@
-from database import client
-from yargy import Parser, rule, and_, not_
+from Database.database import client
+from yargy import Parser
 from razdel import sentenize
 from dicts_and_rules import ORGANIZATION, ORGANIZATION1
 

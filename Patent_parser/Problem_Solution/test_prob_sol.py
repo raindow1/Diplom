@@ -1,6 +1,5 @@
-import time
-from database import client
-from yargy import Parser, rule, and_, not_
+from Database.database import client
+from yargy import Parser, rule
 from yargy.pipelines import morph_pipeline, caseless_pipeline
 from razdel import sentenize
 from yargy.interpretation import fact
