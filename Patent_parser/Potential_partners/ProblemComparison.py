@@ -78,8 +78,10 @@ class ProblemComparison(Problems):
         third_hyponyms = []
         root_id = 0
         second_nmod_id = 0
+        third_nmod_id = 0
 
-        list = self.get_key_words()
+        #list = self.get_key_words()
+        list = ['создание', 'получение', 'повышение', 'обеспечение', 'сокращение', 'удаление', 'способ', 'облегчение', 'уменьшение', 'улучшение', 'регенерация', 'снижение', 'разработка', 'очистка', 'детоксикация', 'осуществление', 'увеличение', 'извлечение', 'упрощение', 'выделение', 'устранение', 'предоставить', 'понижение', 'осаждение', 'конденсирование', 'повысить', 'экономичность', 'минимизация', 'регулирование', 'расширение', 'предотвращение', 'компромисс', 'продление', 'выбор', 'сохранение', 'улучшенное', 'добавление', 'превращение', 'повышенное', 'сварка', 'решение', 'проведение', 'восстановление', 'исключение', 'усовершенствование', 'снизить', 'необходимость', 'производство', 'получить', 'реализация', 'возможность', 'использование', 'преодоление', 'утилизация']
 
 
         if problem:
@@ -97,10 +99,13 @@ class ProblemComparison(Problems):
                         if tmp[k]["deprel"] in ["root"]:
                             res_root[k] = {"lemma": tmp[k]["lemma"], "id": tmp[k]["id"]}
                             root_id = res_root[k]["id"]
-                        if tmp[k]["deprel"] in ["nmod"] and tmp[k]["head"] == root_id:
+                        if tmp[k]["deprel"] in ["nmod","amod", "obj"] and tmp[k]["head"] == root_id:
                             res_nmod[k] = {"lemma": tmp[k]["lemma"]}
                             second_nmod_id = tmp[k]["id"]
-                        if tmp[k]["deprel"] in ["nmod"] and tmp[k]["head"] == second_nmod_id:
+                        if tmp[k]["deprel"] in ["nmod","amod", "obj"] and tmp[k]["head"] == second_nmod_id:
+                            third_nmod[k] = {"lemma": tmp[k]["lemma"]}
+                            third_nmod_id = tmp[k]["id"]
+                        if tmp[k]["deprel"] in ["nmod","amod", "obj"] and tmp[k]["head"] == third_nmod_id:
                             third_nmod[k] = {"lemma": tmp[k]["lemma"]}
 
 

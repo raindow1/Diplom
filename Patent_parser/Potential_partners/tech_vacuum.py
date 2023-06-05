@@ -27,19 +27,22 @@ def main():
     rus_patents = patent_filter()[0]
     in_patents = patent_filter()[1]
     db_client = ClickhouseDB()
-    database = "db_patents"
-    VO_db = "yandex_problem_solution"
-    IPC_db = "IPC_problem_solution"
-    vacuum_db = "tech_vacuum"
     table_columns = ['Id', 'Problem']
+    second_level_count = 0
+    third_level_count = 0
+    first_level_k = 1
+    second_level_k = 1
+    third_level_k = 1
+    final_k = 0
+    tech_vacuum = []
 
-    VO_patent_count = db_client.count_data(database, VO_db)
-    IPC_patent_count = db_client.count_data(database, IPC_db)
+    VO_patent_count = db_client.count_data(db_client.database, db_client.db_yandex_structure)
+    IPC_patent_count = db_client.count_data(db_client.database, db_client.db_ipc_structure)
     vo_problems = ProblemComparison()
 
     for i in range(1, IPC_patent_count):
         if i in rus_patents:
-            VO_result = db_client.select_from_db(database, IPC_db, ["Problem"], i)
+            VO_result = db_client.select_from_db(db_client.database, db_client.db_ipc_structure, ["Problem"], i)
             VO_problem = VO_result.result_rows[0][0]
             VO_res_root = vo_problems.get_structure(VO_problem)[0]
             VO_res_nmod = vo_problems.get_structure(VO_problem)[1]
@@ -49,10 +52,10 @@ def main():
             # print(VO_res_nmod)
             # print(VO_third_nmod)
 
-        for c in range(1, IPC_patent_count):
+        for c in range(29, IPC_patent_count):
 
             if c in in_patents:
-                IPC_result = db_client.select_from_db(database, IPC_db, ["Problem"], c)
+                IPC_result = db_client.select_from_db(db_client.database, db_client.db_ipc_structure, ["Problem"], c)
                 IPC_problem = IPC_result.result_rows[0][0]
                 IPC_res_root = vo_problems.get_structure(IPC_problem)[0]
                 IPC_res_nmod = vo_problems.get_structure(IPC_problem)[1]
@@ -64,22 +67,39 @@ def main():
 
                 for root_key in VO_res_root:
                     if root_key in IPC_res_root:
-                        count += 1
-                for nmod_key in VO_res_nmod:
-                    if nmod_key in IPC_res_nmod:
-                        count += 1
-                for third_nmod_key in VO_third_nmod:
-                    if third_nmod_key in IPC_third_nmod:
-                        count += 1
+                        first_level_k *= 3
+                if first_level_k == 3:
+                    for nmod_key in VO_res_nmod:
+                        if nmod_key in IPC_res_nmod:
+                            second_level_count += 1
+                    if second_level_count > 0:
+                        first_level_k *= 2
+                        for third_nmod_key in VO_third_nmod:
+                            if third_nmod_key in IPC_third_nmod:
+                                third_level_count += 1
+                        match third_level_count:
+                            case 1:
+                                third_level_k *= 0.5
+                            case 2:
+                                third_level_k *= 0.75
+                            case 3:
+                                third_level_k = 1
 
-                if count < 3 and IPC_problem[0]:
-                    row = [Id, IPC_problem[0]]
-                    data = [row]
-                    db_client.insert_into_db(data, table_columns, database, vacuum_db)
-                    Id += 1
+                final_k = (first_level_k + second_level_k + third_level_k) / 6
 
+                if final_k < 0.9:
+                    if len(IPC_problem) != 0:
+                        if IPC_problem[0] not in tech_vacuum:
+                            tech_vacuum.append(IPC_problem[0])
 
+            print(f'analyzed patent #{i}')
             print(f'analyzed patent #{c}')
+
+    for problem in tech_vacuum:
+        row = [Id, problem]
+        data = [row]
+        db_client.insert_into_db(data, table_columns, db_client.database, db_client.db_tech_vacuum)
+        Id += 1
 
 
 

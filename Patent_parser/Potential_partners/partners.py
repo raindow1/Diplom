@@ -78,6 +78,8 @@ def main():
     VO_third_nmod = dict()
     VO_nmod_hyponyms = []
     VO_third_hyponyms = []
+    word_count = 0
+    word_count1 = 0
 
 
     nlp = stanza.Pipeline(lang='ru', processors='tokenize,pos,lemma,ner,depparse')
@@ -98,6 +100,7 @@ def main():
         if VO_problem:
             for word in list:
                 if word in VO_problem[0]:
+                    word_count += 1
                     index = VO_problem[0].find(word)
                     splitted_string = VO_problem[0][index:]
                     anl_string = splitted_string.split(',')[0]
@@ -111,7 +114,7 @@ def main():
                         if VO_tmp[k]["deprel"] in ["root"]:
                             VO_res_root[k] = {"lemma": VO_tmp[k]["lemma"], "id": VO_tmp[k]["id"]}
                             VO_root_id = VO_res_root[k]["id"]
-                        if VO_tmp[k]["deprel"] in ["nmod"] and VO_tmp[k]["head"] == VO_root_id:
+                        if VO_tmp[k]["deprel"] in ["nmod", "amod"] and VO_tmp[k]["head"] == VO_root_id:
                             VO_res_nmod[k] = {"lemma": VO_tmp[k]["lemma"]}
                             VO_second_nmod_id = VO_tmp[k]["id"]
                         if VO_tmp[k]["deprel"] in ["nmod"] and VO_tmp[k]["head"] == VO_second_nmod_id:
@@ -132,6 +135,8 @@ def main():
                         except (KeyError, IndexError):
                             VO_third_synsets = ""
                         VO_third_hyponyms.append(VO_third_nmod[VO_key_third_nmod]["lemma"])
+                if word_count > 0:
+                     break
 
 
                     # print(VO_res_root)
@@ -157,6 +162,7 @@ def main():
 
                 for word in list:
                     if word in IPC_problem[0]:
+                        word_count1 += 1
                         IPC_index = IPC_problem[0].find(word)
                         IPC_splitted_string = IPC_problem[0][IPC_index:]
                         IPC_anl_string = IPC_splitted_string.split(',')[0]
@@ -190,6 +196,8 @@ def main():
                             except (KeyError, IndexError):
                                 IPC_third_synsets = ""
                             IPC_third_hyponyms.append(IPC_third_nmod[IPC_key_third_nmod]["lemma"])
+                    if word_count1 > 0:
+                        break
 
                 for root_key in VO_res_root:
                     if root_key in IPC_res_root:
