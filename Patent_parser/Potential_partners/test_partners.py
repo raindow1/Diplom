@@ -4,7 +4,7 @@ from Potential_partners.ProblemComparison import ProblemComparison
 
 def main():
 
-    Id = 1
+    Id = 20
     second_level_count = 0
     third_level_count = 0
     VO_res_root = []
@@ -12,7 +12,7 @@ def main():
     VO_third_nmod = []
     first_level_k = 1
     second_level_k = 1
-    third_level_k = 1
+    third_level_k = 0
     final_k = 0
     partners = []
 
@@ -31,7 +31,7 @@ def main():
         print(VO_res_root)
         print(VO_res_nmod)
         print(VO_third_nmod)
-
+#i = 11 c = 50 - test data
         for c in range(1, IPC_patent_count):
 
             IPC_result = client.query(f'SELECT Problem FROM db_patents.IPC_problem_solution WHERE Id = {c}')
@@ -54,15 +54,15 @@ def main():
                     if nmod_key in IPC_res_nmod:
                         second_level_count += 1
                 if second_level_count > 0:
-                    first_level_k *= 2
+                    second_level_k *= 2
                     for third_nmod_key in VO_third_nmod:
                         if third_nmod_key in IPC_third_nmod:
                             third_level_count += 1
                     match third_level_count:
                         case 1:
-                            third_level_k *= 0.5
+                            third_level_k = 0.5
                         case 2:
-                            third_level_k *= 0.75
+                            third_level_k = 0.75
                         case 3:
                             third_level_k = 1
 
@@ -70,18 +70,21 @@ def main():
 
             if final_k > 0.9 and IPC_asignee not in partners:
                 partners.append(IPC_asignee)
-                row = [Id, IPC_asignee, IPC_problem, c]
+                row = [Id, IPC_asignee, IPC_problem, c, final_k]
                 data = [row]
                 client.insert('potential_partners', data,
-                              column_names=['Id', 'Organisation_name', 'Problems', 'IPC_patent_id'],
+                              column_names=['Id', 'Organisation_name', 'IProblems', 'IPC_patent_id', "Match_ratio"],
                               database="db_patents")
                 Id += 1
 
+            second_level_count = 0
+            third_level_count = 0
             first_level_k = 1
             second_level_k = 1
-            third_level_k = 1
+            third_level_k = 0
             final_k = 0
 
+            print(f'analyzed patent #{i}')
             print(f'analyzed patent #{c}')
 
 

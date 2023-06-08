@@ -18,7 +18,7 @@ def translate(field, max_chunk_size):
         #original_chunks = list(sentenize(field))
         for i in original_chunks:
             r = GoogleTranslator(source='en', target='ru').translate(text=i)
-            time.sleep(10)
+            time.sleep(3)
             results_list.append(r)
 
         for i in results_list:
@@ -32,12 +32,12 @@ def translate(field, max_chunk_size):
 
 
 def main():
-    Id = 2674
+    Id = 2707
 
     max_chunk_size = 4000
     patent_count = client.query('SELECT count() FROM db_patents.IPC_google_patents').result_rows[0][0]
 
-    for i in range(2674, patent_count):
+    for i in range(2708, patent_count):
         index = client.query(f'SELECT Index FROM db_patents.IPC_google_patents WHERE Id = {i}').result_rows[0][0]
         result = client.query(f'SELECT Description, Abstract FROM db_patents.IPC_google_patents WHERE Id = {i}')
         solution = client.query(f'SELECT Title FROM db_patents.IPC_google_patents WHERE Id = {i}').result_rows[0][0]

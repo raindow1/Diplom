@@ -13,6 +13,7 @@ class ClickhouseDB:
         self.db_google_structure = "google_problem_solution"
         self.db_potential_partners = "Potential_partners"
         self.db_tech_vacuum = "tech_vacuum"
+        self.db_temp_tech_vacuum = "temp_tech_vacuum"
         self.db_transd_patents = "translated_IPC_patents"
         self.db_ipc_structure = "IPC_problem_solution"
 
@@ -25,7 +26,7 @@ class ClickhouseDB:
         return self._client.query(f'SELECT count() FROM {db_name}.{db_table}').result_rows[0][0]
 
     def delete_from_db(self, db_name: str, db_table: str, row_id: int) -> None:
-        return self._client.query(f'DELETE FROM {db_name}.{db_table} WHERE Id =={row_id}')
+        return self._client.query(f'DELETE FROM {db_name}.{db_table} WHERE Id ={row_id}')
 
     def delete_all_from_db(self, db_name: str, db_table: str) -> None:
         return self._client.query(f'DELETE FROM {db_name}.{db_table}')
@@ -40,4 +41,19 @@ class ClickhouseDB:
             column_string = db_columns[0]
 
         return self._client.query(f'SELECT {column_string} FROM {db_name}.{db_table} WHERE Id = {row_id}')
+
+    def select_all_from_db(self, db_name: str, db_table: str, db_columns: List):
+        column_string = ""
+        if len(db_columns) > 1:
+            for column in db_columns[:-1]:
+                column_string += column + ","
+            column_string += db_columns[len(db_columns) - 1]
+        else:
+            column_string = db_columns[0]
+
+        return self._client.query(f'SELECT {column_string} FROM {db_name}.{db_table}')
+
+    @property
+    def client(self):
+        return self._client
 
