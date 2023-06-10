@@ -1,82 +1,108 @@
-from Database.database import client
 from Potential_partners.ProblemComparison import ProblemComparison
+from Database.ClickhouseDB import ClickhouseDB
 
 
 def main():
 
-    Id = 20
-    second_level_count = 0
-    third_level_count = 0
-    VO_res_root = []
-    VO_res_nmod = []
-    VO_third_nmod = []
-    first_level_k = 1
-    second_level_k = 1
-    third_level_k = 0
-    final_k = 0
-    partners = []
+    # Объявление необходимых переменных
+    Id = 20  # Идентификатор записи
 
+    db_client = ClickhouseDB()  # Объект класса БД
 
-    VO_patent_count = client.query('SELECT count() FROM db_patents.yandex_problem_solution').result_rows[0][0]
-    IPC_patent_count = client.query('SELECT count() FROM db_patents.IPC_problem_solution').result_rows[0][0]
-    vo_problems = ProblemComparison()
+    second_level_count = 0  # Количество найденных зависимых слов второго уровня
+    third_level_count = 0  # Количество найденных зависимых слов третьего уровня
+    vo_res_root = []  # Список с найденным сказуемым
+    vo_res_nmod = []  # Список с найденными зависимыми словами второго уровня
+    vo_third_nmod = []  # Список с найденными зависимыми словами третьего уровня
+    first_level_k = 1  # Коэффициент сравнения первого уровня
+    second_level_k = 1  # Коэффициент сравнения второго уровня
+    third_level_k = 0  # Коэффициент сравнения третьего уровня
+    final_k = 0  # Итоговый коэффициент сравнения
 
-    for i in range(6, VO_patent_count):
-        VO_result = client.query(f'SELECT Problem FROM db_patents.yandex_problem_solution WHERE Id = {i}')
-        VO_problem = VO_result.result_rows[0][0]
-        VO_res_root = vo_problems.get_structure(VO_problem)[0]
-        VO_res_nmod = vo_problems.get_structure(VO_problem)[1]
-        VO_third_nmod = vo_problems.get_structure(VO_problem)[2]
+    partners = []  # Список найденных технологических партнеров
 
-        print(VO_res_root)
-        print(VO_res_nmod)
-        print(VO_third_nmod)
+    # Колонки таблицы
+    table_columns = ['Id', 'Organisation_name', 'IProblems', 'IPC_patent_id', "Match_ratio"]
+
+    # Запрос данных о количестве записей
+    vo_patent_count = db_client.count_data(db_client.database,db_client.db_yandex_structure)
+    ipc_patent_count = db_client.count_data(db_client.database,db_client.db_ipc_structure)
+
+    # Создание объекта класса сравнения проблем
+    problems = ProblemComparison()
+
+    # Процесс сравнения проблем
+    for i in range(6, vo_patent_count):
+        # Получение предложения с проблемой
+        vo_result = db_client.select_from_db(db_client.database, db_client.db_yandex_structure, ['Problem'], i)
+        vo_problem = vo_result.result_rows[0][0]
+
+        # Получение слов для сравнения
+        vo_res_root = problems.get_structure(vo_problem)[0]
+        vo_res_nmod = problems.get_structure(vo_problem)[1]
+        vo_third_nmod = problems.get_structure(vo_problem)[2]
+
+        print(vo_res_root)
+        print(vo_res_nmod)
+        print(vo_third_nmod)
 #i = 11 c = 50 - test data
-        for c in range(1, IPC_patent_count):
+        for c in range(1, ipc_patent_count):
+            # Получение предложения с проблемой
+            ipc_result = db_client.select_from_db(db_client.database, db_client.db_ipc_structure, ['Problem'], c)
+            # Получение правопреемника
+            ipc_asignee = db_client.select_from_db(db_client.database, db_client.db_ipc_patents,
+                                                   ['Asignee'], c).result_rows[0][0]
+            ipc_problem = ipc_result.result_rows[0][0]
+            # Получение слов для сравнения
+            ipc_res_root = problems.get_structure(ipc_problem)[0]
+            ipc_res_nmod = problems.get_structure(ipc_problem)[1]
+            ipc_third_nmod = problems.get_structure(ipc_problem)[2]
 
-            IPC_result = client.query(f'SELECT Problem FROM db_patents.IPC_problem_solution WHERE Id = {c}')
-            IPC_asignee = client.query(f'SELECT Asignee FROM db_patents.IPC_google_patents WHERE Id = {c}').result_rows[0][0]
-            IPC_problem = IPC_result.result_rows[0][0]
-            IPC_res_root = vo_problems.get_structure(IPC_problem)[0]
-            IPC_res_nmod = vo_problems.get_structure(IPC_problem)[1]
-            IPC_third_nmod = vo_problems.get_structure(IPC_problem)[2]
-            third_nmod_len = len(IPC_third_nmod)
+            print(ipc_res_root)
+            print(ipc_res_nmod)
+            print(ipc_third_nmod)
 
-            print(IPC_res_root)
-            print(IPC_res_nmod)
-            print(IPC_third_nmod)
-
-            for root_key in VO_res_root:
-                if root_key in IPC_res_root:
+            # Сравнение слов по уровням
+            # Сравнение сказуемых
+            for root_key in vo_res_root:
+                if root_key in ipc_res_root:
+                    # Повышение коэффициента при успешном сходстве
                     first_level_k *= 3
             if first_level_k == 3:
-                for nmod_key in VO_res_nmod:
-                    if nmod_key in IPC_res_nmod:
+                # Сравнение зависимых слов второго уровня
+                for nmod_key in vo_res_nmod:
+                    if nmod_key in ipc_res_nmod:
                         second_level_count += 1
                 if second_level_count > 0:
+                    # Повышение коэффициента при успешном сходстве
                     second_level_k *= 2
-                    for third_nmod_key in VO_third_nmod:
-                        if third_nmod_key in IPC_third_nmod:
+                    # Сравнение зависимых слов третьего уровня
+                    for third_nmod_key in vo_third_nmod:
+                        if third_nmod_key in ipc_third_nmod:
                             third_level_count += 1
                     match third_level_count:
                         case 1:
+                            # Повышение коэффициента при успешном сходстве одного слова
                             third_level_k = 0.5
                         case 2:
+                            # Повышение коэффициента при успешном сходстве двух слов
                             third_level_k = 0.75
                         case 3:
+                            # Повышение коэффициента при успешном сходстве трех слов
                             third_level_k = 1
 
+            # Расчет итогового коэффиента по формуле
             final_k = (first_level_k + second_level_k + third_level_k) / 6
 
-            if final_k > 0.9 and IPC_asignee not in partners:
-                partners.append(IPC_asignee)
-                row = [Id, IPC_asignee, IPC_problem, c, final_k]
+            # Запись предприятия в партнеры при нужном значении итогового коэффициента сравнения
+            if final_k > 0.9 and ipc_asignee not in partners:
+                partners.append(ipc_asignee)
+                row = [Id, ipc_asignee, ipc_problem, c, final_k]
                 data = [row]
-                client.insert('potential_partners', data,
-                              column_names=['Id', 'Organisation_name', 'IProblems', 'IPC_patent_id', "Match_ratio"],
-                              database="db_patents")
+                db_client.insert_into_db(data, table_columns, db_client.database, db_client.db_potential_partners)
                 Id += 1
 
+            # Обнуление необходимых счетчиков
             second_level_count = 0
             third_level_count = 0
             first_level_k = 1

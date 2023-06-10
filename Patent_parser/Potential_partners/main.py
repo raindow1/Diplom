@@ -18,7 +18,7 @@ def read_files():
                     if word[0] not in word_list:
                         word_list.append(word[0])
 
-    with open('dataset_1.csv', 'r') as csv_file:
+    with open('../Data/dataset_1.csv', 'r') as csv_file:
         reader = csv.reader(csv_file)
         for row in reader:
             tmp_list = row[1].split(";")
@@ -28,7 +28,7 @@ def read_files():
                     if word[0] not in word_list:
                         word_list.append(word[0])
 
-    file = open("sentences.txt")
+    file = open("../Data/sentences.txt")
     for line in file:
         sent  = line.split(",")
         for s in sent:

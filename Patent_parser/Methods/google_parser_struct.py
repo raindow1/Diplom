@@ -12,6 +12,12 @@ class GoogleParser(Parser):
         page = self.__google_web_driver.get_patent_html(link)
         self.__soup = BeautifulSoup(page, 'html.parser')
 
+    def get_organisation_links(self, link: str) -> None:
+        """
+        Получить ссылки на патенты организации
+        """
+        raise NotImplementedError
+
     def get_title(self) -> str:
         return self.__soup.find('h1', {'id': 'title'}).text
 
@@ -24,6 +30,15 @@ class GoogleParser(Parser):
             inventors = data_inventor['data-inventor'] + "\n"
 
         return inventors
+
+    def get_index(self) -> str:
+        index = self.__soup.find('h2', attrs={'id': 'pubnum'})
+        if index:
+            index_text = index.text
+        else:
+            index_text = ""
+
+        return index_text
 
     def get_date_of_publication(self) -> str:
         return  self.__soup.find('div', attrs={'class':'publication style-scope application-timeline'}).text

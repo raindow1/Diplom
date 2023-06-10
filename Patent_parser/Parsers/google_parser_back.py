@@ -15,7 +15,7 @@ driver = webdriver.Chrome("chromedriver.exe", chrome_options=chrome_options)
 
 Id = 1
 
-with open("organisations.csv", encoding='UTF8') as f:
+with open("../Data/organisations.csv", encoding='UTF8') as f:
     organisations = [row.replace("\n","") for row in f]
     organisations.pop(0)
 

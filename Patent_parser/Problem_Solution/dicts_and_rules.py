@@ -7,6 +7,7 @@ Problem = fact(
     ['target', 'add_word', 'second_word']
 )
 
+# Первый словарь ключевых слов для извлечения проблемы
 TARGET = morph_pipeline([
     "цель",
     "способ",
@@ -16,6 +17,7 @@ TARGET = morph_pipeline([
     "использование"
     ])
 
+# Словарь опциональных ключевых слов
 ADD_WORD = caseless_pipeline([
     "предлагаеого",
     "настоящего",
@@ -23,6 +25,7 @@ ADD_WORD = caseless_pipeline([
     "решаемая"
     ])
 
+# Второй словарь ключевых слов для извлечения проблемы
 SECOND_WORD = morph_pipeline([
     "изобретения",
     "предназначено",
@@ -30,6 +33,7 @@ SECOND_WORD = morph_pipeline([
     "устройства"
     ])
 
+# Второй словарь ключевых слов для извлечения проблемы по второму правилу
 SECOND_WORD_ADD = morph_pipeline([
     "позволяет",
     "достигается",
@@ -66,11 +70,12 @@ KEY_WORDS = morph_pipeline([
     "техническая задача"
 ])
 
-#Rules for problem extraction
+#Первое правило для извлечения проблемы из текста
 ORGANIZATION = rule(TARGET.interpretation(Problem.target),
                     ADD_WORD.interpretation(Problem.add_word).optional(),
                     SECOND_WORD.interpretation(Problem.second_word))
 
+#Второе правило для извлечения проблемы из текста
 ORGANIZATION1 = rule(TARGET.interpretation(Problem.target),
                     ADD_WORD.interpretation(Problem.add_word).optional(),
                     SECOND_WORD_ADD.interpretation(Problem.second_word))

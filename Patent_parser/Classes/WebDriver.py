@@ -19,6 +19,7 @@ class WebDriver(ABC):
     def get_patent_html(self, patent_link: str) -> str:
         """
         Получить html-верстку страницы патента
+        return: html-верстка с сайта
         """
         pass
 

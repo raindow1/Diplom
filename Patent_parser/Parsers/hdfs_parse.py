@@ -16,7 +16,7 @@ Id = 1
 
 client.command('SET hdfs_create_new_file_on_insert = 1')
 
-with open("organisations.csv", encoding='UTF8') as f:
+with open("../Data/organisations.csv", encoding='UTF8') as f:
     organisations = [row.replace("\n","") for row in f]
     organisations.pop(0)
 

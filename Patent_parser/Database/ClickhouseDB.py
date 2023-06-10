@@ -4,7 +4,9 @@ import clickhouse_connect
 
 class ClickhouseDB:
     def __init__(self) -> None:
-        self._client = clickhouse_connect.get_client(host='localhost', username='raindow', password='1988')
+        self._client = clickhouse_connect.get_client(host='localhost',
+                                                     username='raindow',
+                                                     password='1988')
         self.database = "db_patents"
         self.db_yandex_patents = "yandex_patents"
         self.db_google_patents = "google_patents"
@@ -18,20 +20,55 @@ class ClickhouseDB:
         self.db_ipc_structure = "IPC_problem_solution"
 
     def insert_into_db(self, data: List, table_columns: List, db_name: str, db_table: str) -> None:
+        """
+        Добавить запись в таблицу БД
+        :param data: данные для сохранения
+        :param table_columns: кололнки таблицы
+        :param db_name: наименование БД
+        :param db_table: наименование таблицы в БД
+        :return запрос INSERT в БД
+        """
         return self._client.insert(db_table, data,
                       column_names=table_columns,
                       database=db_name)
 
     def count_data(self, db_name: str, db_table: str) -> int:
+        """
+        Посчитать количество записей в таблице БД
+        :param db_name: наименование БД
+        :param db_table: наименование таблицы в БД
+        :return запрос SELECT count() в БД
+        """
         return self._client.query(f'SELECT count() FROM {db_name}.{db_table}').result_rows[0][0]
 
     def delete_from_db(self, db_name: str, db_table: str, row_id: int) -> None:
+        """
+        Удалить запись по определенному Id из таблицы БД
+        :param db_name: наименование БД
+        :param db_table: наименование таблицы в БД
+        :param row_id: Id записи
+        :return запрос DELETE в БД
+        """
         return self._client.query(f'DELETE FROM {db_name}.{db_table} WHERE Id ={row_id}')
 
     def delete_all_from_db(self, db_name: str, db_table: str) -> None:
+        """
+        Удалить все записи из таблицы БД
+        :param db_name: наименование БД
+        :param db_table: наименование таблицы в БД
+        :return запрос DELETE в БД
+        """
         return self._client.query(f'DELETE FROM {db_name}.{db_table}')
 
     def select_from_db(self, db_name: str, db_table: str, db_columns: List, row_id: int):
+        """
+        Выборка записей из БД
+        :param db_name: наименование БД
+        :param db_table: наименование таблицы в БД
+        :param db_columns: колонки таблицы
+        :param row_id: Id записи
+        :return запрос SELECT в БД
+        """
         column_string = ""
         if len(db_columns) > 1:
             for column in db_columns[:-1]:
@@ -43,6 +80,13 @@ class ClickhouseDB:
         return self._client.query(f'SELECT {column_string} FROM {db_name}.{db_table} WHERE Id = {row_id}')
 
     def select_all_from_db(self, db_name: str, db_table: str, db_columns: List):
+        """
+        Выборка всех записей из БД
+        :param db_name: наименование БД
+        :param db_table: наименование таблицы в БД
+        :param db_columns: колонки таблицы
+        :return запрос SELECT в БД
+        """
         column_string = ""
         if len(db_columns) > 1:
             for column in db_columns[:-1]:

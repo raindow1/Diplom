@@ -24,6 +24,15 @@ class YandexParser(Parser):
     def get_authors(self) -> str:
         return self.__soup.find_all(lambda tag: 'Авторы:' in tag.text).pop().next_sibling.text
 
+    def get_index(self) -> str:
+        index = self.__soup.find('div', {"class": "doc-summary-url"})
+        if index:
+            index_text = index.text
+        else:
+            index_text = ""
+
+        return index_text
+
     def get_date_of_publication(self) -> str:
         date = self.__soup.find_all('span', {"class": "doc-summary-item__value"})
         date_text = date[3].text

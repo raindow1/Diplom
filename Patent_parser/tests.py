@@ -5,7 +5,7 @@ from Methods.google_webdriver import GoogleWebDriver
 from Methods.yandex_webdriver import YandexWebDriver
 from Classes.Patent import Patent
 import Problem_Solution.test_prob_sol as sol
-import Translation.translation_test as translate
+import Translation.translation as translate
 
 
 class TestModule(unittest.TestCase):

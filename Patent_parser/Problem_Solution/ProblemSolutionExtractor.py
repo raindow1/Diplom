@@ -4,20 +4,26 @@ from typing import List
 from razdel import sentenize
 
 
-class YandexProblemSolution(ProblemSolution):
+class ProblemSolutionExtractor(ProblemSolution):
     def __init__(self) -> None:
         super().__init__()
 
-    def get_problem(self, patent_id: int) -> List[str]:
+    def get_problem(self, description: str, abstract: str) -> List[str]:
+        """
+        Получить проблему(цель) изобретения
+        :param description: текст описания изобретения
+        :param abstract: текст анотации изобретения
+        :return список проблем
+        """
+
+        # Обявление списка с найденными предложениями
         problems = []
-        result = client.query(f'SELECT Description, Abstract FROM db_patents.yandex_patents WHERE Id = {patent_id}')
 
-        description = result.result_rows[0][0]
-        abstract = result.result_rows[0][1]
-
+        # Сегментация текстовых полей на предложения
         description_sentences = list(sentenize(description))
         abstract_sentences = list(sentenize(abstract))
 
+        # Анализ каждого предложения текста описания изобретения с учетом сформулированных правил
         for desc_sentence in description_sentences:
             matches = list(self._orgparser_main.findall(desc_sentence.text))
             if matches and not problems:
@@ -27,6 +33,7 @@ class YandexProblemSolution(ProblemSolution):
                 if matches and not problems:
                     problems.append(desc_sentence.text)
 
+        # Анализ каждого предложения текста аннотации изобретения с учетом сформулированных правил
         for abstr_sentence in abstract_sentences:
             matches = list(self._orgparser_main.findall(abstr_sentence.text))
             if matches and not problems:
@@ -38,5 +45,3 @@ class YandexProblemSolution(ProblemSolution):
 
         return problems
 
-    def get_solution(self, patent_id: int) -> str:
-        return client.query(f'SELECT Title FROM db_patents.yandex_patents WHERE Id = {patent_id}').result_rows[0][0]

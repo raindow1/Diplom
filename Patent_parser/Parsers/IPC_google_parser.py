@@ -17,12 +17,12 @@ driver = webdriver.Chrome("chromedriver.exe", chrome_options=chrome_options)
 
 Id = 1
 
-with open("organisations.csv", encoding='UTF8') as f:
+with open("../Data/organisations.csv", encoding='UTF8') as f:
     organisations = [row.replace("\n","") for row in f]
     organisations.pop(0)
 
 patent_links = []
-data = pd.read_csv('../IPC_patents.csv')['result link'].tolist()
+data = pd.read_csv('../Data/IPC_patents.csv')['result link'].tolist()
 for link in data:
     if 'RU' in str(link):
         link = link.replace("/en","/ru")
