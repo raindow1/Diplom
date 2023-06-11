@@ -1,6 +1,6 @@
-from Database.database import client
 from Potential_partners.ProblemComparison import ProblemComparison
 from Database.ClickhouseDB import ClickhouseDB
+from settings import CLICKHOUSE_HOST, CLICKHOUSE_USERNAME, CLICKHOUSE_PASSWORD
 
 
 def patent_filter() -> tuple:
@@ -9,7 +9,7 @@ def patent_filter() -> tuple:
     :return списки с Id русских и иностранных патентов
     """
     # Создание объекта класса БД
-    db_client = ClickhouseDB()
+    db_client = ClickhouseDB(CLICKHOUSE_HOST, CLICKHOUSE_USERNAME, CLICKHOUSE_PASSWORD)
     # Получение данных о количестве патентов
     patent_count = db_client.count_data(db_client.database,db_client.db_ipc_patents)
     # Объявление списков
@@ -17,7 +17,8 @@ def patent_filter() -> tuple:
     in_patents = []
     # Фильрация патентов
     for i in range(1, patent_count):
-        patent_index = db_client.select_from_db(db_client.database,db_client.db_ipc_patents, ['Index'], i)
+        patent_index = db_client.select_from_db(db_client.database,
+                                                db_client.db_ipc_patents, ['Index'], i).result_rows[0][0]
         if 'RU' in patent_index:
             rus_patents.append(i)
         else:
@@ -38,7 +39,7 @@ def main():
     ru_third_nmod = []  # Список с найденными зависимыми словами третьего уровня
     rus_patents = patent_filter()[0]  # Список с Id русскоязычных патентов
     in_patents = patent_filter()[1]  # Список с Id англоязычных патентов
-    db_client = ClickhouseDB()  # Объект класса БД
+    db_client = ClickhouseDB(CLICKHOUSE_HOST, CLICKHOUSE_USERNAME, CLICKHOUSE_PASSWORD)  # Объект класса БД
 
     second_level_count = 0  # Количество найденных зависимых слов второго уровня
     third_level_count = 0  # Количество найденных зависимых слов третьего уровня
@@ -54,9 +55,29 @@ def main():
 
     # Получение данных о количестве записей
     ipc_patent_count = db_client.count_data(db_client.database, db_client.db_ipc_structure)
+
+    # Выбор записи проблемы РФ с которой начнется сравнение
+    ru_row_selection = int(
+        input('Выберите запись проблемы предприятия ВО, с которой начнется сравнение:\n'
+              '->: '))
+
+    if ru_row_selection < 1 or ru_row_selection > ipc_patent_count:
+        print('Ошибка: Некорректный id записи')
+        exit(1)
+
+    # Выбор записи иностранной проблемы с которой начнется сравнение
+    en_row_selection = int(
+        input('Выберите запись проблемы предприятий РФ и друж. стран, с которой начнется сравнение:\n'
+              '->: '))
+
+    if en_row_selection < 1 or en_row_selection > ipc_patent_count:
+        print('Ошибка: Некорректный id записи')
+        exit(1)
+
+    # Создание объекта класса сравнения проблем
     problems = ProblemComparison()
 
-    for i in range(5, ipc_patent_count):
+    for i in range(ru_row_selection, ipc_patent_count):
         # Проверка на русскоязычный патент
         if i in rus_patents:
             # Получение предложения с проблемой
@@ -71,7 +92,7 @@ def main():
             # print(VO_res_nmod)
             # print(VO_third_nmod)
 
-        for c in range(1, ipc_patent_count):
+        for c in range(en_row_selection, ipc_patent_count):
             # Проверка на англоязычный патент
             if c in in_patents:
                 # Получение предложения с проблемой

@@ -19,7 +19,9 @@ class GoogleParser(Parser):
         raise NotImplementedError
 
     def get_title(self) -> str:
-        return self.__soup.find('h1', {'id': 'title'}).text
+        title = self.__soup.find('meta', attrs={'name': 'DC.title'})
+        title_text = title["content"]
+        return title_text
 
     def get_assignee(self) -> str:
         return self.__soup.select_one('[data-assignee]')['data-assignee']
@@ -44,7 +46,12 @@ class GoogleParser(Parser):
         return  self.__soup.find('div', attrs={'class':'publication style-scope application-timeline'}).text
 
     def get_abstract(self) -> str:
-        return self.__soup.find('patent-text', {'name': 'abstract'}).text
+        abstract = self.__soup.find('meta', attrs={'name': 'description'})
+        if abstract:
+            abstract_text = abstract["content"]
+        else:
+            abstract_text = ""
+        return abstract_text
 
     def get_description(self) -> str:
         return self.__soup.find('patent-text', {'name': 'description'}).text

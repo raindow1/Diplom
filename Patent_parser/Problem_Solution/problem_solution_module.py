@@ -1,12 +1,14 @@
 from Database.ClickhouseDB import ClickhouseDB
 from Problem_Solution.ProblemSolutionExtractor import ProblemSolutionExtractor
+from settings import CLICKHOUSE_HOST, CLICKHOUSE_USERNAME, CLICKHOUSE_PASSWORD
 
 
 def main():
 
     # Объявление необходимых переменных
     Id = 1  # Идентификатор записи
-    db_client = ClickhouseDB()  # Объявление объекта класса БД
+    # Объявление объекта класса БД
+    db_client = ClickhouseDB(CLICKHOUSE_HOST, CLICKHOUSE_USERNAME, CLICKHOUSE_PASSWORD)
     table_columns = ['Id', 'Problem', 'Solution', 'Patent_id']  # колонки таблицы
 
     # Выбор таблицы для проведения анализа проблем
@@ -68,10 +70,13 @@ def main():
         else:
             db_client.insert_into_db(data, table_columns, db_client.database, db_client.db_ipc_structure)
 
+        print(f'Патент №{i}\n')
+        print('Проблема:\n', problems)
+        print('Решение:\n', solution)
+
         Id += 1
 
-        print(problems)
-        print(solution)
+
 
 if __name__ == "__main__":
     main()

@@ -33,7 +33,7 @@ class PatentTranslator:
             original_chunks = self.create_chunks(field, max_chunk_size)
             for i in original_chunks:
                 r = self._translator.translate(text=i)
-                time.sleep(10)
+                time.sleep(3)
                 results_list.append(r)
 
             # Соединение переведенных фрагментов

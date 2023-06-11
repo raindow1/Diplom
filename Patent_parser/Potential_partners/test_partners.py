@@ -1,5 +1,6 @@
 from Potential_partners.ProblemComparison import ProblemComparison
 from Database.ClickhouseDB import ClickhouseDB
+from settings import CLICKHOUSE_HOST, CLICKHOUSE_USERNAME, CLICKHOUSE_PASSWORD
 
 
 def main():
@@ -7,7 +8,7 @@ def main():
     # Объявление необходимых переменных
     Id = 20  # Идентификатор записи
 
-    db_client = ClickhouseDB()  # Объект класса БД
+    db_client = ClickhouseDB(CLICKHOUSE_HOST, CLICKHOUSE_USERNAME, CLICKHOUSE_PASSWORD)  # Объект класса БД
 
     second_level_count = 0  # Количество найденных зависимых слов второго уровня
     third_level_count = 0  # Количество найденных зависимых слов третьего уровня
@@ -24,15 +25,35 @@ def main():
     # Колонки таблицы
     table_columns = ['Id', 'Organisation_name', 'IProblems', 'IPC_patent_id', "Match_ratio"]
 
+
     # Запрос данных о количестве записей
-    vo_patent_count = db_client.count_data(db_client.database,db_client.db_yandex_structure)
-    ipc_patent_count = db_client.count_data(db_client.database,db_client.db_ipc_structure)
+    vo_patent_count = db_client.count_data(db_client.database, db_client.db_yandex_structure)
+    ipc_patent_count = db_client.count_data(db_client.database, db_client.db_ipc_structure)
+
+    # Выбор записи ВО с которой начнется сравнение
+    vo_row_selection = int(
+        input('Выберите запись проблемы предприятия ВО, с которой начнется сравнение:\n'
+              '->: '))
+
+    if vo_row_selection < 1 or vo_row_selection > vo_patent_count:
+        print('Ошибка: Некорректный id записи')
+        exit(1)
+
+    # Выбор записи патентов РФ и друж. стран с которой начнется сравнение
+    ipc_row_selection = int(
+        input('Выберите запись проблемы предприятий РФ и друж. стран, с которой начнется сравнение:\n'
+              '->: '))
+
+    if ipc_row_selection < 1 or ipc_row_selection > ipc_patent_count:
+        print('Ошибка: Некорректный id записи')
+        exit(1)
+
 
     # Создание объекта класса сравнения проблем
     problems = ProblemComparison()
 
     # Процесс сравнения проблем
-    for i in range(6, vo_patent_count):
+    for i in range(vo_row_selection, vo_patent_count):
         # Получение предложения с проблемой
         vo_result = db_client.select_from_db(db_client.database, db_client.db_yandex_structure, ['Problem'], i)
         vo_problem = vo_result.result_rows[0][0]
@@ -42,11 +63,11 @@ def main():
         vo_res_nmod = problems.get_structure(vo_problem)[1]
         vo_third_nmod = problems.get_structure(vo_problem)[2]
 
-        print(vo_res_root)
-        print(vo_res_nmod)
-        print(vo_third_nmod)
+        # print(vo_res_root)
+        # print(vo_res_nmod)
+        # print(vo_third_nmod)
 #i = 11 c = 50 - test data
-        for c in range(1, ipc_patent_count):
+        for c in range(ipc_row_selection, ipc_patent_count):
             # Получение предложения с проблемой
             ipc_result = db_client.select_from_db(db_client.database, db_client.db_ipc_structure, ['Problem'], c)
             # Получение правопреемника
@@ -58,9 +79,9 @@ def main():
             ipc_res_nmod = problems.get_structure(ipc_problem)[1]
             ipc_third_nmod = problems.get_structure(ipc_problem)[2]
 
-            print(ipc_res_root)
-            print(ipc_res_nmod)
-            print(ipc_third_nmod)
+            # print(ipc_res_root)
+            # print(ipc_res_nmod)
+            # print(ipc_third_nmod)
 
             # Сравнение слов по уровням
             # Сравнение сказуемых
@@ -97,6 +118,10 @@ def main():
             # Запись предприятия в партнеры при нужном значении итогового коэффициента сравнения
             if final_k > 0.9 and ipc_asignee not in partners:
                 partners.append(ipc_asignee)
+                print('Решаемая проблема предприятия ВО:\n', vo_problem[0])
+                print('Найденная организация-партнер:\n', ipc_asignee)
+                print('Решаемая проблема организации-партнера:\n', ipc_problem[0])
+                print(f'Id патента:{c}\n')
                 row = [Id, ipc_asignee, ipc_problem, c, final_k]
                 data = [row]
                 db_client.insert_into_db(data, table_columns, db_client.database, db_client.db_potential_partners)
@@ -110,8 +135,8 @@ def main():
             third_level_k = 0
             final_k = 0
 
-            print(f'analyzed patent #{i}')
-            print(f'analyzed patent #{c}')
+            # print(f'analyzed patent #{i}')
+            # print(f'analyzed patent #{c}')
 
 
 

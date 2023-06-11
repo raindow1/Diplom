@@ -3,10 +3,10 @@ import clickhouse_connect
 
 
 class ClickhouseDB:
-    def __init__(self) -> None:
-        self._client = clickhouse_connect.get_client(host='localhost',
-                                                     username='raindow',
-                                                     password='1988')
+    def __init__(self, host: str, username: str, password: str) -> None:
+        self._client = clickhouse_connect.get_client(host=host,
+                                                     username=username,
+                                                     password=password)
         self.database = "db_patents"
         self.db_yandex_patents = "yandex_patents"
         self.db_google_patents = "google_patents"
@@ -39,7 +39,10 @@ class ClickhouseDB:
         :param db_table: наименование таблицы в БД
         :return запрос SELECT count() в БД
         """
-        return self._client.query(f'SELECT count() FROM {db_name}.{db_table}').result_rows[0][0]
+        return self._client.query(f'SELECT'
+                                  f' count() '
+                                  f'FROM '
+                                  f'{db_name}.{db_table}').result_rows[0][0]
 
     def delete_from_db(self, db_name: str, db_table: str, row_id: int) -> None:
         """
@@ -49,7 +52,11 @@ class ClickhouseDB:
         :param row_id: Id записи
         :return запрос DELETE в БД
         """
-        return self._client.query(f'DELETE FROM {db_name}.{db_table} WHERE Id ={row_id}')
+        return self._client.query(f'DELETE '
+                                  f'FROM '
+                                  f'{db_name}.{db_table} '
+                                  f'WHERE '
+                                  f'Id ={row_id}')
 
     def delete_all_from_db(self, db_name: str, db_table: str) -> None:
         """
@@ -58,7 +65,9 @@ class ClickhouseDB:
         :param db_table: наименование таблицы в БД
         :return запрос DELETE в БД
         """
-        return self._client.query(f'DELETE FROM {db_name}.{db_table}')
+        return self._client.query(f'DELETE'
+                                  f' FROM '
+                                  f'{db_name}.{db_table}')
 
     def select_from_db(self, db_name: str, db_table: str, db_columns: List, row_id: int):
         """
@@ -77,7 +86,12 @@ class ClickhouseDB:
         else:
             column_string = db_columns[0]
 
-        return self._client.query(f'SELECT {column_string} FROM {db_name}.{db_table} WHERE Id = {row_id}')
+        return self._client.query(f'SELECT'
+                                  f' {column_string} '
+                                  f'FROM '
+                                  f'{db_name}.{db_table}'
+                                  f' WHERE '
+                                  f'Id = {row_id}')
 
     def select_all_from_db(self, db_name: str, db_table: str, db_columns: List):
         """
@@ -95,7 +109,10 @@ class ClickhouseDB:
         else:
             column_string = db_columns[0]
 
-        return self._client.query(f'SELECT {column_string} FROM {db_name}.{db_table}')
+        return self._client.query(f'SELECT '
+                                  f'{column_string} '
+                                  f'FROM '
+                                  f'{db_name}.{db_table}')
 
     @property
     def client(self):

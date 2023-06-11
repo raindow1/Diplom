@@ -30,12 +30,12 @@ def translate(field, max_chunk_size):
 
 
 def main():
-    Id = 3435
+    Id = 3901
 
     max_chunk_size = 4000
     patent_count = client.query('SELECT count() FROM db_patents.IPC_google_patents').result_rows[0][0]
 
-    for i in range(3436, patent_count):
+    for i in range(3902, patent_count):
         index = client.query(f'SELECT Index FROM db_patents.IPC_google_patents WHERE Id = {i}').result_rows[0][0]
         result = client.query(f'SELECT Description, Abstract FROM db_patents.IPC_google_patents WHERE Id = {i}')
         solution = client.query(f'SELECT Title FROM db_patents.IPC_google_patents WHERE Id = {i}').result_rows[0][0]

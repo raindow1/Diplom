@@ -1,8 +1,8 @@
 import unittest
-from Methods.google_parser_struct import GoogleParser
-from Methods.yandex_parser_struct import YandexParser
-from Methods.google_webdriver import GoogleWebDriver
-from Methods.yandex_webdriver import YandexWebDriver
+from Parse_Methods.google_parser_struct import GoogleParser
+from Parse_Methods.yandex_parser_struct import YandexParser
+from Parse_Methods.google_webdriver import GoogleWebDriver
+from Parse_Methods.yandex_webdriver import YandexWebDriver
 from Classes.Patent import Patent
 import Problem_Solution.test_prob_sol as sol
 import Translation.translation as translate
