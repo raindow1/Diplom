@@ -30,7 +30,31 @@ def main():
             link = link.replace("/en", "/ru")
         patent_links.append(str(link))
 
-    for patent_link in patent_links:
+    # Выбор записи с которой начнется перевод
+    row_selection = int(
+        input('Выберите количество патентов для парсинга:\n'
+              '->: '))
+
+    if row_selection < 1 or row_selection > len(patent_links):
+        print('Неверные входные данные')
+        exit(1)
+
+    # Необходимость записи в БД
+    db_save_selection = int(
+        input('Производить запись в БД?\n'
+              '\t1. Нет;\n'
+              '\t2. Да.\n'
+              '->: '))
+
+    if db_save_selection == 1:
+        db_check = 0
+    elif db_save_selection == 2:
+        db_check = 1
+    else:
+        print('Некорректные входные данные')
+        exit(1)
+
+    for patent_link in patent_links[:row_selection]:
         patent = Patent(patent_link, google_parser)
 
         # Получаем аннотацию патента
@@ -68,12 +92,13 @@ def main():
         sim_docs = patent.get_similar_patents()
 
         # Сохраняем запись в БД
-        row = [Id, title, abstract, index, asignee, authors, ipc, date_of_publication,
-               description, claims, sim_docs]
-        data = [row]
-        db_client.insert_into_db(data, table_columns, db_client.database, db_client.db_ipc_patents)
+        if db_check == 1:
+            row = [Id, title, abstract, index, asignee, authors, ipc, date_of_publication,
+                   description, claims, sim_docs]
+            data = [row]
+            db_client.insert_into_db(data, table_columns, db_client.database, db_client.db_ipc_patents)
 
-        print(f'Патент №{Id} сохранен в БД')
+            print(f'Патент №{Id} сохранен в БД')
 
         Id += 1
 

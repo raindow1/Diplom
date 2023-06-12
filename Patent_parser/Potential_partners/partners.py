@@ -1,236 +1,172 @@
-import stanza
-from Database.database import client
-import csv
-from ruwordnet import RuWordNet
-
-
-def read_files():
-    nlp = stanza.Pipeline(lang='ru', processors='tokenize,pos,lemma,ner,depparse')
-    tmp = dict()
-    word_list = []
-    deletion_mas = []
-    with open('../Data/dataset.csv', 'r') as csv_file:
-        reader = csv.reader(csv_file)
-        for row in reader:
-            tmp_list = row[1].split(";")
-            for word in tmp_list:
-                if word != '':
-                    word = word.split(" ")
-                    if word[0] not in word_list:
-                        word_list.append(word[0])
-
-    with open('../Data/dataset_1.csv', 'r') as csv_file:
-        reader = csv.reader(csv_file)
-        for row in reader:
-            tmp_list = row[1].split(";")
-            for word in tmp_list:
-                if word != '':
-                    word = word.split(" ")
-                    if word[0] not in word_list:
-                        word_list.append(word[0])
-
-    file = open("../Data/sentences.txt")
-    for line in file:
-        sent  = line.split(",")
-        for s in sent:
-            tmp_list = row[1].split(";")
-            for word in tmp_list:
-                if word != '':
-                    word = word.split(" ")
-                    if word[0] not in word_list:
-                        word_list.append(word[0])
-
-    #Нахождение лишних слов с помощью поиска частей речи
-    for f in word_list:
-        doc = nlp(f)
-        for sent in doc.sentences:
-            for word in sent.words:
-                tmp[word.text] = {"upos": word.upos, "lemma": word.lemma}
-                f = tmp[word.text]["lemma"]
-    for k in tmp.keys():
-        if (tmp[k]["upos"] in ["ADJ", "ADV","PUNCT"]):
-            deletion_mas.append(k)
-
-    #Удаление лишних слов из списка
-    #Удаление вручную
-    deletion_mas.remove(",")
-    word_list.remove("автоматизированное")
-    word_list.remove("сбор,")
-    word_list.remove("обеспеченин")
-    word_list.remove("полученин")
-    word_list.remove('')
-    #Удаление найденных слов через анализ части речи
-    for del_word in deletion_mas:
-        word_list.remove(del_word)
-
-    return word_list
+from Potential_partners.ProblemComparison import ProblemComparison
+from Database.ClickhouseDB import ClickhouseDB
+from settings import CLICKHOUSE_HOST, CLICKHOUSE_USERNAME, CLICKHOUSE_PASSWORD
 
 
 def main():
 
-    list = read_files()
-    Id = 1
-    count = 0
-    wn = RuWordNet()
-    VO_tmp = dict()
-    VO_res_root = dict()
-    VO_res_nmod = dict()
-    VO_third_nmod = dict()
-    VO_nmod_hyponyms = []
-    VO_third_hyponyms = []
-    word_count = 0
-    word_count1 = 0
+    # Объявление необходимых переменных
+    Id = 1  # Идентификатор записи
+    vo_patent_limit = 0  # Ограничение записей предприятий ВО
+    ipc_patent_limit = 0  # Ограничение записей предприятий РФ и друж. стран
+
+    db_client = ClickhouseDB(CLICKHOUSE_HOST, CLICKHOUSE_USERNAME, CLICKHOUSE_PASSWORD)  # Объект класса БД
+
+    second_level_count = 0  # Количество найденных зависимых слов второго уровня
+    third_level_count = 0  # Количество найденных зависимых слов третьего уровня
+    vo_res_root = []  # Список с найденным сказуемым
+    vo_res_nmod = []  # Список с найденными зависимыми словами второго уровня
+    vo_third_nmod = []  # Список с найденными зависимыми словами третьего уровня
+    first_level_k = 1  # Коэффициент сравнения первого уровня
+    second_level_k = 1  # Коэффициент сравнения второго уровня
+    third_level_k = 0  # Коэффициент сравнения третьего уровня
+    final_k = 0  # Итоговый коэффициент сравнения
+
+    partners = []  # Список найденных технологических партнеров
+
+    # Колонки таблицы
+    table_columns = ['Id', 'Organisation_name', 'IProblems', 'IPC_patent_id', "Match_ratio"]
 
 
-    nlp = stanza.Pipeline(lang='ru', processors='tokenize,pos,lemma,ner,depparse')
-    VO_patent_count = client.query('SELECT count() FROM db_patents.yandex_problem_solution').result_rows[0][0]
-    IPC_patent_count = client.query('SELECT count() FROM db_patents.IPC_problem_solution').result_rows[0][0]
+    # Запрос данных о количестве записей
+    vo_patent_count = db_client.count_data(db_client.database, db_client.db_yandex_structure)
+    ipc_patent_count = db_client.count_data(db_client.database, db_client.db_ipc_structure)
 
-    for i in range(1, VO_patent_count):
-        VO_result = client.query(f'SELECT Problem FROM db_patents.yandex_problem_solution WHERE Id = {i}')
-        VO_problem = VO_result.result_rows[0][0]
+    # Выбор записи ВО с которой начнется сравнение
+    vo_row_selection = int(
+        input('Выберите запись проблемы предприятия ВО, с которой начнется сравнение:\n'
+              '->: '))
 
-        VO_res_root.clear()
-        VO_res_nmod.clear()
-        VO_third_nmod.clear()
-        VO_tmp.clear()
-        VO_nmod_hyponyms.clear()
-        VO_third_hyponyms.clear()
+    if vo_row_selection < 1 or vo_row_selection > vo_patent_count:
+        print('Ошибка: Некорректный id записи')
+        exit(1)
 
-        if VO_problem:
-            for word in list:
-                if word in VO_problem[0]:
-                    word_count += 1
-                    index = VO_problem[0].find(word)
-                    splitted_string = VO_problem[0][index:]
-                    anl_string = splitted_string.split(',')[0]
-                    #print(anl_string)
-                    doc = nlp(anl_string)
-                    #print(doc)
-                    for sent in doc.sentences:
-                        for a in sent.words:
-                            VO_tmp[a.text] = {"deprel": a.deprel, "lemma": a.lemma, "id": a.id, "head":a.head}
-                    for k in VO_tmp.keys():
-                        if VO_tmp[k]["deprel"] in ["root"]:
-                            VO_res_root[k] = {"lemma": VO_tmp[k]["lemma"], "id": VO_tmp[k]["id"]}
-                            VO_root_id = VO_res_root[k]["id"]
-                        if VO_tmp[k]["deprel"] in ["nmod", "amod"] and VO_tmp[k]["head"] == VO_root_id:
-                            VO_res_nmod[k] = {"lemma": VO_tmp[k]["lemma"]}
-                            VO_second_nmod_id = VO_tmp[k]["id"]
-                        if VO_tmp[k]["deprel"] in ["nmod"] and VO_tmp[k]["head"] == VO_second_nmod_id:
-                            VO_third_nmod[k] = {"lemma": VO_tmp[k]["lemma"]}
+    # Выбор записи патентов РФ и друж. стран с которой начнется сравнение
+    ipc_row_selection = int(
+        input('Выберите запись проблемы предприятий РФ и друж. стран, с которой начнется сравнение:\n'
+              '->: '))
 
-                    for VO_key_nmod in VO_res_nmod.keys():
-                        try:
-                            VO_nmod_synsets = wn.get_senses(VO_res_nmod[VO_key_nmod]["lemma"])[0].synset.hypernyms
-                            VO_nmod_hyponyms = VO_nmod_synsets[0].title.split(",")
-                        except (KeyError, IndexError):
-                            VO_nmod_synsets = ""
-                        VO_nmod_hyponyms.append(VO_res_nmod[VO_key_nmod]["lemma"])
+    if ipc_row_selection < 1 or ipc_row_selection > ipc_patent_count:
+        print('Ошибка: Некорректный id записи')
+        exit(1)
 
-                    for VO_key_third_nmod in VO_third_nmod.keys():
-                        try:
-                            VO_third_synsets = wn.get_senses(VO_res_nmod[VO_key_third_nmod]["lemma"])[0].synset.hypernyms
-                            VO_third_hyponyms = VO_third_synsets[0].title.split(",")
-                        except (KeyError, IndexError):
-                            VO_third_synsets = ""
-                        VO_third_hyponyms.append(VO_third_nmod[VO_key_third_nmod]["lemma"])
-                if word_count > 0:
-                     break
+    # Необходимость ограничения
+    limit_selection = int(
+        input('Установить ограничение в кол-ве обрабатываемых записей?\n'
+              '\t1. Нет;\n'
+              '\t2. Да.\n'
+              '->: '))
 
+    if limit_selection == 1:
+        vo_patent_limit = vo_patent_count
+        ipc_patent_limit = ipc_patent_count
+    elif limit_selection == 2:
+        vo_data_limit = int(
+            input('Установите ограничение проблем предприятий ВО:\n'
+                  '->: '))
+        vo_patent_limit = vo_row_selection + vo_data_limit
+        ipc_data_limit = int(
+            input('Установите ограничение проблем предприятий РФ и друж. стран:\n'
+                  '->: '))
+        ipc_patent_limit = ipc_row_selection + ipc_data_limit
+    else:
+        print('Некорректные входные данные')
 
-                    # print(VO_res_root)
-                    # print(VO_res_nmod)
-                    # print(VO_third_nmod)
-                    # print(VO_nmod_hyponyms)
-                    # print(VO_third_hyponyms)
+    # Необходимость записи в БД
+    db_save_selection = int(
+        input('Производить запись в БД?\n'
+              '\t1. Нет;\n'
+              '\t2. Да.\n'
+              '->: '))
 
+    if db_save_selection == 1:
+        db_check = 0
+    elif db_save_selection == 2:
+        db_check = 1
+    else:
+        print('Некорректные входные данные')
+        exit(1)
 
+    # Создание объекта класса сравнения проблем
+    problems = ProblemComparison()
 
+    # Процесс сравнения проблем
+    for i in range(vo_row_selection, vo_patent_limit):
+        # Получение предложения с проблемой
+        vo_result = db_client.select_from_db(db_client.database, db_client.db_yandex_structure, ['Problem'], i)
+        vo_problem = vo_result.result_rows[0][0]
 
-        for c in range(1, IPC_patent_count):
-            IPC_result = client.query(f'SELECT Problem FROM db_patents.IPC_problem_solution WHERE Id = {c}')
-            IPC_asignee = client.query(f'SELECT Asignee FROM db_patents.IPC_google_patents WHERE Id = {c}').result_rows[0][0]
-            IPC_problem = IPC_result.result_rows[0][0]
-            if IPC_problem:
-                IPC_tmp = dict()
-                IPC_res_root = dict()
-                IPC_res_nmod = dict()
-                IPC_third_nmod = dict()
-                IPC_nmod_hyponyms = []
-                IPC_third_hyponyms = []
+        # Получение слов для сравнения
+        vo_res_root = problems.get_structure(vo_problem)[0]
+        vo_res_nmod = problems.get_structure(vo_problem)[1]
+        vo_third_nmod = problems.get_structure(vo_problem)[2]
 
-                for word in list:
-                    if word in IPC_problem[0]:
-                        word_count1 += 1
-                        IPC_index = IPC_problem[0].find(word)
-                        IPC_splitted_string = IPC_problem[0][IPC_index:]
-                        IPC_anl_string = IPC_splitted_string.split(',')[0]
-                        #print(IPC_anl_string)
-                        IPC_doc = nlp(IPC_anl_string)
-                        for sent in IPC_doc.sentences:
-                            for a in sent.words:
-                                IPC_tmp[a.text] = {"deprel": a.deprel, "lemma": a.lemma, "id": a.id, "head": a.head}
-                        for k in IPC_tmp.keys():
-                            if IPC_tmp[k]["deprel"] in ["root"]:
-                                IPC_res_root[k] = {"lemma": IPC_tmp[k]["lemma"], "id": IPC_tmp[k]["id"]}
-                                IPC_root_id = IPC_res_root[k]["id"]
-                            if IPC_tmp[k]["deprel"] in ["nmod"] and IPC_tmp[k]["head"] == IPC_root_id:
-                                IPC_res_nmod[k] = {"lemma": IPC_tmp[k]["lemma"]}
-                                IPC_second_nmod_id = IPC_tmp[k]["id"]
-                            if IPC_tmp[k]["deprel"] in ["nmod"] and IPC_tmp[k]["head"] == IPC_second_nmod_id:
-                                IPC_third_nmod[k] = {"lemma": IPC_tmp[k]["lemma"]}
+#i = 11 c = 50 - test data
+        for c in range(ipc_row_selection, ipc_patent_limit):
+            # Получение предложения с проблемой
+            ipc_result = db_client.select_from_db(db_client.database, db_client.db_ipc_structure, ['Problem'], c)
+            # Получение правопреемника
+            ipc_asignee = db_client.select_from_db(db_client.database, db_client.db_ipc_patents,
+                                                   ['Asignee'], c).result_rows[0][0]
+            ipc_problem = ipc_result.result_rows[0][0]
+            # Получение слов для сравнения
+            ipc_res_root = problems.get_structure(ipc_problem)[0]
+            ipc_res_nmod = problems.get_structure(ipc_problem)[1]
+            ipc_third_nmod = problems.get_structure(ipc_problem)[2]
 
-                        for IPC_key_nmod in IPC_res_nmod.keys():
-                            try:
-                                IPC_nmod_synsets = wn.get_senses(IPC_res_nmod[IPC_key_nmod]["lemma"])[0].synset.hypernyms
-                                IPC_nmod_hyponyms = IPC_nmod_synsets[0].title.split(",")
-                            except (KeyError,IndexError):
-                                IPC_nmod_synsets = ""
-                            IPC_nmod_hyponyms.append(IPC_res_nmod[IPC_key_nmod]["lemma"])
+            # Сравнение слов по уровням
+            # Сравнение сказуемых
+            for root_key in vo_res_root:
+                if root_key in ipc_res_root:
+                    # Повышение коэффициента при успешном сходстве
+                    first_level_k *= 3
+            if first_level_k == 3:
+                # Сравнение зависимых слов второго уровня
+                for nmod_key in vo_res_nmod:
+                    if nmod_key in ipc_res_nmod:
+                        second_level_count += 1
+                if second_level_count > 0:
+                    # Повышение коэффициента при успешном сходстве
+                    second_level_k *= 2
+                    # Сравнение зависимых слов третьего уровня
+                    for third_nmod_key in vo_third_nmod:
+                        if third_nmod_key in ipc_third_nmod:
+                            third_level_count += 1
+                    match third_level_count:
+                        case 1:
+                            # Повышение коэффициента при успешном сходстве одного слова
+                            third_level_k = 0.5
+                        case 2:
+                            # Повышение коэффициента при успешном сходстве двух слов
+                            third_level_k = 0.75
+                        case 3:
+                            # Повышение коэффициента при успешном сходстве трех слов
+                            third_level_k = 1
 
-                        for IPC_key_third_nmod in IPC_third_nmod.keys():
-                            try:
-                                IPC_third_synsets = wn.get_senses(IPC_res_nmod[IPC_key_third_nmod]["lemma"])[0].synset.hypernyms
-                                IPC_third_hyponyms = IPC_third_synsets[0].title.split(",")
-                            except (KeyError, IndexError):
-                                IPC_third_synsets = ""
-                            IPC_third_hyponyms.append(IPC_third_nmod[IPC_key_third_nmod]["lemma"])
-                    if word_count1 > 0:
-                        break
+            # Расчет итогового коэффиента по формуле
+            final_k = (first_level_k + second_level_k + third_level_k) / 6
 
-                for root_key in VO_res_root:
-                    if root_key in IPC_res_root:
-                        count += 1
-                for nmod_key in VO_nmod_hyponyms:
-                    if nmod_key in IPC_nmod_hyponyms:
-                        count += 1
-                for third_nmod_key in VO_third_hyponyms:
-                    if third_nmod_key in IPC_third_hyponyms:
-                        count += 1
+            # Запись предприятия в партнеры при нужном значении итогового коэффициента сравнения
+            if final_k > 0.9 and ipc_asignee not in partners:
+                partners.append(ipc_asignee)
+                print('Решаемая проблема предприятия ВО:\n', vo_problem[0])
+                print('Найденная организация-партнер:\n', ipc_asignee)
+                print('Решаемая проблема организации-партнера:\n', ipc_problem[0])
+                print(f'Id патента:{c}\n')
+                if db_check == 1:
+                    row = [Id, ipc_asignee, ipc_problem, c, final_k]
+                    data = [row]
+                    db_client.insert_into_db(data, table_columns, db_client.database, db_client.db_potential_partners)
+                    Id += 1
 
-                # if count >= 3:
-                #     sim_probs = ['fff', 'ddd']
-                #     row = [Id, IPC_asignee, IPC_problem[0], sim_probs]
-                #     data = [row]
-                #     client.insert('Potential_partners', data,
-                #                   column_names=['Id', 'Organisation_name', 'Problems', 'Similar_problems'],
-                #                   database="db_patents")
-                #     Id += 1
+            # Обнуление необходимых счетчиков
+            second_level_count = 0
+            third_level_count = 0
+            first_level_k = 1
+            second_level_k = 1
+            third_level_k = 0
+            final_k = 0
 
-                    print(IPC_res_root)
-                    # print(IPC_res_nmod)
-                    # print(IPC_third_nmod)
-                    print(IPC_nmod_hyponyms)
-                    print(IPC_third_hyponyms)
-                    IPC_res_root.clear()
-                    IPC_res_nmod.clear()
-                    IPC_third_nmod.clear()
-                    IPC_tmp.clear()
-                    IPC_nmod_hyponyms.clear()
-                    IPC_third_hyponyms.clear()
-
-            print(f'analyzed patent #{c}')
 
 
 

@@ -81,10 +81,10 @@ def main():
                 sim_docs = patent.get_similar_patents()
 
                 # Сохраняем запись в БД
-                # row = [Id, title, abstract, index, ipc, date_of_publication, authors,
-                #        description, claims, sim_docs]
-                # data = [row]
-                # db_client.insert_into_db(data, table_columns, db_client.database, db_client.db_yandex_patents)
+                row = [Id, title, abstract, index, ipc, date_of_publication, authors,
+                       description, claims, sim_docs]
+                data = [row]
+                db_client.insert_into_db(data, table_columns, db_client.database, db_client.db_yandex_patents)
 
                 print(f'Патент №{Id} сохранен в БД')
 

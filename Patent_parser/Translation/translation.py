@@ -9,6 +9,7 @@ def main():
     trans = PatentTranslator()  # Объявление объекта класса переводчика
     db_client = ClickhouseDB(CLICKHOUSE_HOST, CLICKHOUSE_USERNAME, CLICKHOUSE_PASSWORD)  # Объявление объекта класса БД
     table_columns = ['Id', 'Abstract', 'Description', 'Patent_id', 'Solution']  # колонки таблицы
+    patent_limit = 0  # Ограничение записей
 
     # Получение данных о количестве записей
     patent_count = db_client.count_data(db_client.database, db_client.db_ipc_patents)
@@ -24,8 +25,40 @@ def main():
         print('Ошибка: Некорректный id записи')
         exit(1)
 
+    # Необходимость ограничения
+    limit_selection = int(
+        input('Установить ограничение в кол-ве обрабатываемых записей?\n'
+              '\t1. Нет;\n'
+              '\t2. Да.\n'
+              '->: '))
+
+    if limit_selection == 1:
+        patent_limit = patent_count
+    elif limit_selection == 2:
+        data_limit = int(
+            input('Установите ограничение:\n'
+                  '->: '))
+        patent_limit = row_selection + data_limit
+    else:
+        print('Некорректные входные данные')
+
+    # Необходимость записи в БД
+    db_save_selection = int(
+        input('Производить запись в БД?\n'
+              '\t1. Нет;\n'
+              '\t2. Да.\n'
+              '->: '))
+
+    if db_save_selection == 1:
+        db_check = 0
+    elif db_save_selection == 2:
+        db_check = 1
+    else:
+        print('Некорректные входные данные')
+        exit(1)
+
     # Перевод текстовых полей
-    for i in range(row_selection, patent_count):
+    for i in range(row_selection, patent_limit):
         # Получение необходимых данных
         index = db_client.select_from_db(db_client.database, db_client.db_ipc_patents, ["Index"], Id).result_rows[0][0]
         result = db_client.select_from_db(db_client.database, db_client.db_ipc_patents, ["Description", "Abstract"], Id)
@@ -43,17 +76,19 @@ def main():
             print('Аннотация:\n', translated_abstract)
 
             # Сохранение текстовых полей в БД
-            row = [Id, translated_abstract, translated_description, i, translated_solution]
-            data = [row]
-            db_client.insert_into_db(data, table_columns, db_client.database, db_client.db_transd_patents)
+            if db_check == 1:
+                row = [Id, translated_abstract, translated_description, i, translated_solution]
+                data = [row]
+                db_client.insert_into_db(data, table_columns, db_client.database, db_client.db_transd_patents)
 
             print(f'Патент #{i} успешно переведен')
 
         else:
             # Сохранение текстовых полей на русском языке без изменений
-            row = [Id, abstract, description, i, solution]
-            data = [row]
-            db_client.insert_into_db(data, table_columns, db_client.database, db_client.db_transd_patents)
+            if db_check == 1:
+                row = [Id, abstract, description, i, solution]
+                data = [row]
+                db_client.insert_into_db(data, table_columns, db_client.database, db_client.db_transd_patents)
 
         Id += 1
 

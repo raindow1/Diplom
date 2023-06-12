@@ -30,9 +30,11 @@ def patent_filter() -> tuple:
 def main():
 
     # Объявление необходимых переменных
-    temp_Id = 980  # Id временной записи
+    db_check = 0 # Индикатор записи в БД
+    temp_Id = 1  # Id временной записи
     Id = 1  # Id записи
-    count = 0
+    ru_patent_count = 0  # Количество записей РФ для анализа
+    en_patent_count = 0  # Количество иностранных записей для анализа
 
     ru_res_root = []  # Список с найденным сказуемым
     ru_res_nmod = []  # Список с найденными зависимыми словами второго уровня
@@ -74,10 +76,45 @@ def main():
         print('Ошибка: Некорректный id записи')
         exit(1)
 
+    # Необходимость ограничения
+    limit_selection = int(
+        input('Установить ограничение в кол-ве обрабатываемых записей?\n'
+              '\t1. Нет;\n'
+              '\t2. Да.\n'
+              '->: '))
+
+    if limit_selection == 1:
+        ru_patent_count = ipc_patent_count
+        en_patent_count = ipc_patent_count
+    elif limit_selection == 2:
+        data_limit = int(
+            input('Установите ограничение:\n'
+                  '->: '))
+        ru_patent_count = ru_row_selection + 1
+        en_patent_count = en_row_selection + data_limit
+    else:
+        print('Некорректные входные данные')
+
+    # Необходимость записи в БД
+    db_save_selection = int(
+        input('Производить запись в БД?\n'
+              '\t1. Нет;\n'
+              '\t2. Да.\n'
+              '->: '))
+
+    if db_save_selection == 1:
+        db_check = 0
+    elif db_save_selection == 2:
+        db_check = 1
+    else:
+        print('Некорректные входные данные')
+        exit(1)
+
+
     # Создание объекта класса сравнения проблем
     problems = ProblemComparison()
 
-    for i in range(ru_row_selection, ipc_patent_count):
+    for i in range(ru_row_selection, ru_patent_count):
         # Проверка на русскоязычный патент
         if i in rus_patents:
             # Получение предложения с проблемой
@@ -88,11 +125,7 @@ def main():
             ru_res_nmod = problems.get_structure(ru_problem)[1]
             ru_third_nmod = problems.get_structure(ru_problem)[2]
 
-            # print(VO_res_root)
-            # print(VO_res_nmod)
-            # print(VO_third_nmod)
-
-        for c in range(en_row_selection, ipc_patent_count):
+        for c in range(en_row_selection, en_patent_count):
             # Проверка на англоязычный патент
             if c in in_patents:
                 # Получение предложения с проблемой
@@ -106,10 +139,6 @@ def main():
                 result_probs = db_client.select_all_from_db(db_client.database, db_client.db_temp_tech_vacuum, ["Problem"])
                 for k in range(1, len(result_probs.result_rows)):
                     tech_vacuum.append(result_probs.result_rows[k][0])
-
-                # print(IPC_res_root)
-                # print(IPC_res_nmod)
-                # print(IPC_third_nmod)
 
                 # Сравнение слов по уровням
                 # Сравнение сказуемых
@@ -149,11 +178,17 @@ def main():
                         # Проверка на отсутствие в тех. вакууме
                         if en_problem[0] not in tech_vacuum:
                             # Запись во временный тех. вакуум
-                            tech_vacuum.append(en_problem[0])
-                            row = [temp_Id, en_problem[0]]
-                            data = [row]
-                            db_client.insert_into_db(data, table_columns, db_client.database, db_client.db_temp_tech_vacuum)
-                            temp_Id += 1
+                            if db_check == 1:
+                                tech_vacuum.append(en_problem[0])
+                                row = [temp_Id, en_problem[0]]
+                                data = [row]
+                                db_client.insert_into_db(data, table_columns, db_client.database, db_client.db_temp_tech_vacuum)
+                                temp_Id += 1
+
+                            print('Решаемая проблема предприятия РФ:\n', ru_problem[0])
+                            print('Проблема, попадающая в тех. вакуум:\n', en_problem[0])
+                            print(f'Id патента:{c}\n')
+
                 elif len(en_problem) != 0:
                     # Проверка на наличие в тех. вакууме
                     if en_problem[0] in tech_vacuum:
@@ -169,9 +204,6 @@ def main():
                 third_level_k = 0
                 final_k = 0
                 tech_vacuum.clear()
-
-                print(f'analyzed patent #{i}')
-                print(f'analyzed patent #{c}')
 
     # Формирование итогового тех. вакуума
     final_result_probs = db_client.select_all_from_db(db_client.database, db_client.db_temp_tech_vacuum, ["Problem"])
